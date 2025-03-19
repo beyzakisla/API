@@ -1,0 +1,7 @@
+flask
+sqlalchemy
+pymysql
+matplotlib
+flasgger
+flask_cors
+gunicorn

@@ -1,0 +1,34 @@
+name: Docker Image CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v3
+
+    - name: Install sshpass
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y sshpass
+
+    - name: Copy Files to Server
+      run: |
+        sshpass -p "${{ secrets.SERVER_PASS }}" scp -o StrictHostKeyChecking=no -r * root@${{ secrets.SERVER_HOST }}:/home/root/api
+
+    - name: SSH into Server and Build Docker Image
+      run: |
+        sshpass -p "${{ secrets.SERVER_PASS }}" ssh -o StrictHostKeyChecking=no root@${{ secrets.SERVER_HOST }} << 'EOF'
+        cd /home/root/api
+        docker build -t api:latest .
+        docker stop api || true
+        docker rm api || true
+        docker run -d --name api -p 3000:3000 -v /home/root/data:/app/data api:latest
+        EOF
